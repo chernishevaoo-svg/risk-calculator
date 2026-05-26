@@ -37,16 +37,24 @@ st.markdown("---")
 # --- 4. РАСЧЕТ И ВЫВОД РЕЗУЛЬТАТОВ ---
 if st.button("Рассчитать риск", type="primary", use_container_width=True):
     
+    # Формируем вектор признаков из введенных данных
     df_input = pd.DataFrame([input_values])
     
+    # ПРИНУДИТЕЛЬНО ПРЕОБРАЗУЕМ ВСЕ КОЛОНКИ В ЧИСЛОВЫЙ ФОРМАМ (float64)
+    # Это спасает от ошибок SimpleImputer при несовпадении типов данных
+    df_input = df_input.astype(float)
+    
+    # Проверяем, нужно ли "инвертировать" признаки
     for feat in config['inverted_features']:
         if feat in df_input.columns:
             max_val = config['inversion_values'][feat]
             df_input[feat] = max_val - df_input[feat]
             
+    # Получаем предсказание модели
     probability = model.predict_proba(df_input)[0, 1]
     prob_percent = probability * 100
     
+    # Определяем группу риска и цвет
     if probability < config['prob_low']:
         risk_group = "🟢 НИЗКИЙ РИСК"
         bg_color = "#d4edda"
@@ -63,6 +71,7 @@ if st.button("Рассчитать риск", type="primary", use_container_widt
         text_color = "#856404"
         recommendation = "Необходимо усиленное внимание, мониторинг динамики показателей."
 
+    # Красивый вывод результатов
     st.markdown("### Результат оценки:")
     st.markdown(f"""
     <div style="background-color: {bg_color}; color: {text_color}; padding: 20px; 
@@ -76,6 +85,7 @@ if st.button("Рассчитать риск", type="primary", use_container_widt
     
     st.info(f"**Рекомендация:** {recommendation}")
     
+    # Справочная информация о порогах
     with st.expander("ℹ️ Подробнее о порогах стратификации"):
         st.write(f"Граница низкого риска: вероятность < **{config['prob_low']:.2f}**")
         st.write(f"Граница высокого риска: вероятность ≥ **{config['prob_high']:.2f}**")
